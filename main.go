@@ -61,17 +61,35 @@ func main() {
 	expectedSize := fmt.Sprintf("%.2f GB", float64(totalSize)/(1024*1024*1024))
 	pterm.Info.Printf("Total Expected Duration: %s | Total Expected Size: %s\n\n", time.Duration(totalDurationUS*1000).String(), expectedSize)
 
-	// User confirmation
-	var result string
-	fmt.Print("Ready to concatenate and dynamically free space. Type 'y' to continue: ")
-	fmt.Scanln(&result)
-	if result != "y" && result != "Y" {
+	// User confirmation via interactive select
+	options := []string{
+		"1. Normal Concatenation (Keep original clips)",
+		"2. Space Recovery Mode (Dynamically delete original clips)",
+		"Cancel",
+	}
+
+	selectedOption, _ := pterm.DefaultInteractiveSelect.WithOptions(options).WithDefaultText("Select operation mode").Show()
+
+	if selectedOption == "Cancel" || selectedOption == "" {
 		pterm.Warning.Println("Operation cancelled by user.")
 		return
+	}
+
+	deleteClips := false
+	if selectedOption == options[1] {
+		pterm.Warning.Println("WARNING: You have selected Space Recovery Mode.")
+		pterm.Warning.Println("Original clips will be permanently deleted from your drive immediately after their packets are processed!")
+		
+		confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Are you absolutely sure you want to delete the source files?").Show()
+		if !confirm {
+			pterm.Warning.Println("Operation cancelled by user.")
+			return
+		}
+		deleteClips = true
 	}
 
 	outputFile := filepath.Join(dir, "fmove_output.mp4")
 
 	// Start processing
-	ProcessFiles(clips, outputFile, totalDurationUS)
+	ProcessFiles(clips, outputFile, totalDurationUS, deleteClips)
 }

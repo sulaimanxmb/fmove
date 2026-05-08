@@ -14,7 +14,7 @@ import (
 
 var pbar *pterm.ProgressbarPrinter
 
-func ProcessFiles(clips []VideoClip, outputFilename string, totalDurationUS int64) {
+func ProcessFiles(clips []VideoClip, outputFilename string, totalDurationUS int64, deleteClips bool) {
 	if len(clips) == 0 {
 		return
 	}
@@ -57,12 +57,16 @@ func ProcessFiles(clips []VideoClip, outputFilename string, totalDurationUS int6
 
 		accumulatedTimeUS += clip.DurationUS
 
-		// The core feature: Delete immediately after processing
-		err := os.Remove(clip.Path)
-		if err != nil {
-			pterm.Warning.Printf("Processed %s, but failed to delete: %v\n", clip.Name, err)
+		if deleteClips {
+			// The core feature: Delete immediately after processing
+			err := os.Remove(clip.Path)
+			if err != nil {
+				pterm.Warning.Printf("Processed %s, but failed to delete: %v\n", clip.Name, err)
+			} else {
+				pterm.Success.Printf("Processed and instantly freed %s!\n", clip.Name)
+			}
 		} else {
-			pterm.Success.Printf("Processed and instantly freed %s!\n", clip.Name)
+			pterm.Success.Printf("Successfully processed %s\n", clip.Name)
 		}
 	}
 
