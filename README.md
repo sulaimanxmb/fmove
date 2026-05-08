@@ -12,7 +12,7 @@
                        Native Space Recovery & Concatenator
 ```
 
-This is a tool which I created as I was having trouble in concatenating multiple video files from GoPro with 'ffmpeg'
+This is a tool which I created as I was having trouble in concatenating multiple video files from GoPro with `ffmpeg`
 
 FMove is a high-performance, native Go CLI utility designed specifically to solve storage bottlenecks when concatenating large video files (like GoPro and iPhone clips). 
 
