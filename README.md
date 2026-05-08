@@ -33,6 +33,14 @@ FMove relies on native C-libraries, so make sure you have `ffmpeg` and `pkg-conf
 brew install ffmpeg pkg-config
 ```
 
+### Prerequisites (Linux)
+```bash
+sudo apt install libavformat-dev libavcodec-dev libavutil-dev pkg-config
+```
+
+### Prerequisites (Windows)
+Due to Native CGO compilation requirements, native Windows building is extremely complex. Windows users are strongly recommended to run FMove inside **Windows Subsystem for Linux (WSL)** using the Linux instructions above.
+
 ### Method 1: Go Install (Recommended)
 If you have Go installed, you can download, compile, and install the tool globally in a single command:
 ```bash
