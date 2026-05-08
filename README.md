@@ -12,6 +12,8 @@
                        Native Space Recovery & Concatenator
 ```
 
+This is a tool which I created as I was having trouble in concatenating multiple video files from GoPro with 'ffmpeg'
+
 FMove is a high-performance, native Go CLI utility designed specifically to solve storage bottlenecks when concatenating large video files (like GoPro and iPhone clips). 
 
 Instead of wrapping the `ffmpeg` CLI binary, FMove uses **CGO** to interface directly with FFmpeg's native C libraries (`libavformat`, `libavcodec`, `libavutil`). 
@@ -53,7 +55,6 @@ If you prefer Homebrew for managing binaries:
 brew tap sulaimanxmb/fmove
 brew install fmove
 ```
-*(Note to dev: Make sure you create a `homebrew-fmove` repository on GitHub and place your `fmove.rb` formula in it for this to work!)*
 
 ---
 
@@ -68,9 +69,6 @@ cd fmove
 
 # Build the binary automatically
 make
-
-# Run the UI Demonstration (No files required)
-make animation
 
 # Build and run the tool in the current directory
 make run
