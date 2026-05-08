@@ -1,0 +1,16 @@
+# FMove binaries
+fmove
+*.exe
+*.test
+
+# Ignore video files in the working directory
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.ts
+
+# IDEs and OS files
+.idea/
+.vscode/
+.DS_Store
