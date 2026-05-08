@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"time"
@@ -126,6 +127,37 @@ func main() {
 
 		expectedSize := fmt.Sprintf("%.2f GB", float64(totalSize)/(1024*1024*1024))
 		pterm.Info.Printf("Total Expected Duration: %s | Total Expected Size: %s\n\n", time.Duration(totalDurationUS*1000).String(), expectedSize)
+	}
+
+	// Safety Check: Detect Mismatch in Resolution or Framerate
+	if len(clips) > 0 {
+		firstWidth := clips[0].Width
+		firstHeight := clips[0].Height
+		firstFPS := clips[0].FPS
+
+		mismatch := false
+		for _, clip := range clips {
+			if clip.Width != firstWidth || clip.Height != firstHeight {
+				mismatch = true
+			}
+			if math.Abs(clip.FPS-firstFPS) > 0.1 { // Allow tiny floating point variations
+				mismatch = true
+			}
+		}
+
+		if mismatch && !*silentFlag {
+			pterm.Warning.Println("WARNING: Resolution or Framerate mismatch detected between clips!")
+			pterm.Warning.Println("Concatenating files with different dimensions or framerates may result in playback corruption or audio desync.")
+			if !*forceFlag {
+				confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Do you want to proceed anyway?").Show()
+				if !confirm {
+					pterm.Warning.Println("Operation cancelled by user.")
+					return
+				}
+			} else {
+				pterm.Warning.Println("Force flag provided. Proceeding despite mismatches.")
+			}
+		}
 	}
 
 	deleteClips := false

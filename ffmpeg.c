@@ -8,7 +8,7 @@ void init_ffmpeg(void) {
     av_log_set_level(AV_LOG_QUIET);
 }
 
-char* get_creation_time(const char* filepath) {
+VideoMetadata* get_metadata(const char* filepath) {
     AVFormatContext *fmt_ctx = NULL;
     if (avformat_open_input(&fmt_ctx, filepath, NULL, NULL) < 0) {
         return NULL;
@@ -18,28 +18,31 @@ char* get_creation_time(const char* filepath) {
         return NULL;
     }
 
-    char* creation_time = NULL;
+    VideoMetadata *meta = calloc(1, sizeof(VideoMetadata));
+    meta->duration = fmt_ctx->duration;
+
     AVDictionaryEntry *tag = av_dict_get(fmt_ctx->metadata, "creation_time", NULL, AV_DICT_IGNORE_SUFFIX);
     if (tag) {
-        creation_time = strdup(tag->value);
+        meta->creation_time = strdup(tag->value);
+    }
+
+    for (int i = 0; i < fmt_ctx->nb_streams; i++) {
+        AVStream *st = fmt_ctx->streams[i];
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            meta->has_video = 1;
+            meta->width = st->codecpar->width;
+            meta->height = st->codecpar->height;
+            if (st->avg_frame_rate.den > 0) {
+                meta->fps = av_q2d(st->avg_frame_rate);
+            } else if (st->r_frame_rate.den > 0) {
+                meta->fps = av_q2d(st->r_frame_rate);
+            }
+            break;
+        }
     }
 
     avformat_close_input(&fmt_ctx);
-    return creation_time;
-}
-
-int64_t get_duration(const char* filepath) {
-    AVFormatContext *fmt_ctx = NULL;
-    if (avformat_open_input(&fmt_ctx, filepath, NULL, NULL) < 0) {
-        return 0;
-    }
-    if (avformat_find_stream_info(fmt_ctx, NULL) < 0) {
-        avformat_close_input(&fmt_ctx);
-        return 0;
-    }
-    int64_t duration = fmt_ctx->duration;
-    avformat_close_input(&fmt_ctx);
-    return duration;
+    return meta;
 }
 
 struct ConcatState {

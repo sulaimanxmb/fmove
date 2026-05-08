@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -21,6 +22,9 @@ type VideoClip struct {
 	DurationUS   int64 // Microseconds
 	Size         int64
 	Name         string
+	Width        int
+	Height       int
+	FPS          float64
 }
 
 func init() {
@@ -29,6 +33,8 @@ func init() {
 
 func ScanDirectory(dir string, extFilter string, outputFile string) ([]VideoClip, error) {
 	var clips []VideoClip
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -48,44 +54,53 @@ func ScanDirectory(dir string, extFilter string, outputFile string) ([]VideoClip
 				continue
 			}
 
-			cPath := C.CString(absPath)
+			wg.Add(1)
+			go func(entry os.DirEntry, absPath string) {
+				defer wg.Done()
 
-			// Get Duration
-			duration := int64(C.get_duration(cPath))
+				cPath := C.CString(absPath)
+				meta := C.get_metadata(cPath)
+				C.free(unsafe.Pointer(cPath))
 
-			// Get Creation Time
-			cTimeStr := C.get_creation_time(cPath)
-			var creationTime time.Time
-			if cTimeStr != nil {
-				timeStr := C.GoString(cTimeStr)
-				C.free(unsafe.Pointer(cTimeStr))
-				// FFmpeg creation_time usually format: 2024-03-22T10:15:30.000000Z
-				parsed, err := time.Parse(time.RFC3339Nano, timeStr)
-				if err == nil {
-					creationTime = parsed
-				} else {
-					// Fallback
+				if meta != nil {
 					info, _ := entry.Info()
-					creationTime = info.ModTime()
+
+					var creationTime time.Time
+					if meta.creation_time != nil {
+						timeStr := C.GoString(meta.creation_time)
+						C.free(unsafe.Pointer(meta.creation_time))
+						parsed, err := time.Parse(time.RFC3339Nano, timeStr)
+						if err == nil {
+							creationTime = parsed
+						} else {
+							creationTime = info.ModTime()
+						}
+					} else {
+						creationTime = info.ModTime()
+					}
+
+					clip := VideoClip{
+						Path:         absPath,
+						CreationTime: creationTime,
+						DurationUS:   int64(meta.duration),
+						Size:         info.Size(),
+						Name:         entry.Name(),
+						Width:        int(meta.width),
+						Height:       int(meta.height),
+						FPS:          float64(meta.fps),
+					}
+
+					C.free(unsafe.Pointer(meta))
+
+					mu.Lock()
+					clips = append(clips, clip)
+					mu.Unlock()
 				}
-			} else {
-				info, _ := entry.Info()
-				creationTime = info.ModTime()
-			}
-
-			info, _ := entry.Info()
-
-			clips = append(clips, VideoClip{
-				Path:         absPath,
-				CreationTime: creationTime,
-				DurationUS:   duration,
-				Size:         info.Size(),
-				Name:         entry.Name(),
-			})
-
-			C.free(unsafe.Pointer(cPath))
+			}(entry, absPath)
 		}
 	}
+
+	wg.Wait()
 
 	// Sort chronologically
 	sort.Slice(clips, func(i, j int) bool {
