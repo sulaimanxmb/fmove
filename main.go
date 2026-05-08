@@ -27,34 +27,8 @@ func main() {
 
 	flag.Parse()
 
-	bannerLines := []string{
-		`  ______  __       __   ______   ____    ____  ______`,
-		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|`,
-		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
-		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
-		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
-		` |__|    |__| \_/ |__| \______/      \__/     |_______|  A Native Space Recovery & Concatenator`,
-	}
-
-	colors := []pterm.Color{
-		pterm.FgLightMagenta,
-		pterm.FgLightCyan,
-		pterm.FgLightGreen,
-		pterm.FgLightYellow,
-		pterm.FgLightRed,
-		pterm.FgLightBlue,
-	}
-
 	if !*silentFlag {
-		fmt.Println()
-		for i, line := range bannerLines {
-			pterm.NewStyle(colors[i%len(colors)], pterm.Bold).Println(line)
-		}
-
-		fmt.Println() // Leave a line space between title and name
-
-		// Normal Blue Text for Name
-		fmt.Println(pterm.Blue("                                                                                       by Sulaiman\n"))
+		printBanner()
 	}
 
 	var clips []VideoClip
@@ -85,16 +59,22 @@ func main() {
 		}
 		clips, err = ScanDirectory(dir, *extFlag, *outFlag)
 		if err != nil {
-			if spinner != nil { spinner.Fail("Failed to scan directory") }
+			if spinner != nil {
+				spinner.Fail("Failed to scan directory")
+			}
 			pterm.Fatal.Println(err)
 		}
 
 		if len(clips) == 0 {
-			if spinner != nil { spinner.Warning("No matching video files found in the current directory.") }
+			if spinner != nil {
+				spinner.Warning("No matching video files found in the current directory.")
+			}
 			return
 		}
 
-		if spinner != nil { spinner.Success(fmt.Sprintf("Found %d clips", len(clips))) }
+		if spinner != nil {
+			spinner.Success(fmt.Sprintf("Found %d clips", len(clips)))
+		}
 	}
 
 	// Build Table Data
@@ -129,70 +109,13 @@ func main() {
 		pterm.Info.Printf("Total Expected Duration: %s | Total Expected Size: %s\n\n", time.Duration(totalDurationUS*1000).String(), expectedSize)
 	}
 
-	// Safety Check: Detect Mismatch in Resolution or Framerate
-	if len(clips) > 0 {
-		firstWidth := clips[0].Width
-		firstHeight := clips[0].Height
-		firstFPS := clips[0].FPS
-
-		mismatch := false
-		for _, clip := range clips {
-			if clip.Width != firstWidth || clip.Height != firstHeight {
-				mismatch = true
-			}
-			if math.Abs(clip.FPS-firstFPS) > 0.1 { // Allow tiny floating point variations
-				mismatch = true
-			}
-		}
-
-		if mismatch && !*silentFlag {
-			pterm.Warning.Println("WARNING: Resolution or Framerate mismatch detected between clips!")
-			pterm.Warning.Println("Concatenating files with different dimensions or framerates may result in playback corruption or audio desync.")
-			if !*forceFlag {
-				confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Do you want to proceed anyway?").Show()
-				if !confirm {
-					pterm.Warning.Println("Operation cancelled by user.")
-					return
-				}
-			} else {
-				pterm.Warning.Println("Force flag provided. Proceeding despite mismatches.")
-			}
-		}
+	if !checkMismatches(clips, *silentFlag, *forceFlag) {
+		return
 	}
 
-	deleteClips := false
-
-	if *forceFlag {
-		deleteClips = true
-		if !*silentFlag {
-			pterm.Warning.Println("Force flag provided. Automatically entering Space Recovery Mode.")
-		}
-	} else {
-		// User confirmation via interactive select
-		options := []string{
-			"1. Normal Concatenation (Keep original clips)",
-			"2. Space Recovery Mode (Dynamically delete original clips)",
-			"Cancel",
-		}
-
-		selectedOption, _ := pterm.DefaultInteractiveSelect.WithOptions(options).WithDefaultText("Select operation mode").Show()
-
-		if selectedOption == "Cancel" || selectedOption == "" {
-			pterm.Warning.Println("Operation cancelled by user.")
-			return
-		}
-
-		if selectedOption == options[1] {
-			pterm.Warning.Println("WARNING: You have selected Space Recovery Mode.")
-			pterm.Warning.Println("Original clips will be permanently deleted from your drive immediately after their packets are processed!")
-
-			confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Are you absolutely sure you want to delete the source files?").Show()
-			if !confirm {
-				pterm.Warning.Println("Operation cancelled by user.")
-				return
-			}
-			deleteClips = true
-		}
+	continueOp, deleteClips := getUserConfirmation(*silentFlag, *forceFlag)
+	if !continueOp {
+		return
 	}
 
 	outputFile := filepath.Join(dir, *outFlag)
@@ -228,4 +151,103 @@ func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool
 
 	p.Stop()
 	pterm.Success.Printf("\nDone! Saved to /Demo/Workspace/fmove_output.mp4\n")
+}
+
+func printBanner() {
+	bannerLines := []string{
+		`  ______  __       __   ______   ____    ____  ______`,
+		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|`,
+		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
+		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
+		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
+		` |__|    |__| \_/ |__| \______/      \__/     |_______|  A Native Space Recovery & Concatenator`,
+	}
+
+	colors := []pterm.Color{
+		pterm.FgLightMagenta,
+		pterm.FgLightCyan,
+		pterm.FgLightGreen,
+		pterm.FgLightYellow,
+		pterm.FgLightRed,
+		pterm.FgLightBlue,
+	}
+
+	fmt.Println()
+	for i, line := range bannerLines {
+		pterm.NewStyle(colors[i%len(colors)], pterm.Bold).Println(line)
+	}
+
+	fmt.Println()
+	fmt.Println(pterm.Blue("                                                                                       by Sulaiman\n"))
+}
+
+func checkMismatches(clips []VideoClip, silentFlag, forceFlag bool) bool {
+	if len(clips) == 0 {
+		return true
+	}
+
+	firstWidth := clips[0].Width
+	firstHeight := clips[0].Height
+	firstFPS := clips[0].FPS
+
+	mismatch := false
+	for _, clip := range clips {
+		if clip.Width != firstWidth || clip.Height != firstHeight {
+			mismatch = true
+		}
+		if math.Abs(clip.FPS-firstFPS) > 0.1 {
+			mismatch = true
+		}
+	}
+
+	if mismatch && !silentFlag {
+		pterm.Warning.Println("WARNING: Resolution or Framerate mismatch detected between clips!")
+		pterm.Warning.Println("Concatenating files with different dimensions or framerates may result in playback corruption or audio desync.")
+		if !forceFlag {
+			confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Do you want to proceed anyway?").Show()
+			if !confirm {
+				pterm.Warning.Println("Operation cancelled by user.")
+				return false
+			}
+		} else {
+			pterm.Warning.Println("Force flag provided. Proceeding despite mismatches.")
+		}
+	}
+	return true
+}
+
+func getUserConfirmation(silentFlag, forceFlag bool) (bool, bool) {
+	if forceFlag {
+		if !silentFlag {
+			pterm.Warning.Println("Force flag provided. Automatically entering Space Recovery Mode.")
+		}
+		return true, true
+	}
+
+	options := []string{
+		"1. Normal Concatenation (Keep original clips)",
+		"2. Space Recovery Mode (Dynamically delete original clips)",
+		"Cancel",
+	}
+
+	selectedOption, _ := pterm.DefaultInteractiveSelect.WithOptions(options).WithDefaultText("Select operation mode").Show()
+
+	if selectedOption == "Cancel" || selectedOption == "" {
+		pterm.Warning.Println("Operation cancelled by user.")
+		return false, false
+	}
+
+	if selectedOption == options[1] {
+		pterm.Warning.Println("WARNING: You have selected Space Recovery Mode.")
+		pterm.Warning.Println("Original clips will be permanently deleted from your drive immediately after their packets are processed!")
+
+		confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Are you absolutely sure you want to delete the source files?").Show()
+		if !confirm {
+			pterm.Warning.Println("Operation cancelled by user.")
+			return false, false
+		}
+		return true, true
+	}
+
+	return true, false
 }

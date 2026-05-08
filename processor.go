@@ -48,40 +48,47 @@ func ProcessFiles(clips []VideoClip, outputFilename string, totalDurationUS int6
 	})
 
 	for _, clip := range clips {
-		if !silent {
-			pterm.Info.Printf("Processing %s...\n", clip.Name)
-		}
-
-		cPath := C.CString(clip.Path)
-		ret := C.append_file(state, cPath)
-		C.free(unsafe.Pointer(cPath))
-
-		if ret < 0 {
-			pterm.Error.Printf("Failed to append %s\n", clip.Name)
-			continue
-		}
-
-		accumulatedTimeUS += clip.DurationUS
-
-		if deleteClips {
-			// The core feature: Delete immediately after processing
-			err := os.Remove(clip.Path)
-			if !silent {
-				if err != nil {
-					pterm.Warning.Printf("Processed %s, but failed to delete: %v\n", clip.Name, err)
-				} else {
-					pterm.Success.Printf("Processed and instantly freed %s!\n", clip.Name)
-				}
-			}
-		} else {
-			if !silent {
-				pterm.Success.Printf("Successfully processed %s\n", clip.Name)
-			}
+		err := processClip(clip, state, deleteClips, silent)
+		if err == nil {
+			accumulatedTimeUS += clip.DurationUS
 		}
 	}
 
 	if !silent {
-		if pbar != nil { pbar.Stop() }
+		if pbar != nil {
+			pbar.Stop()
+		}
 		pterm.Success.Printf("\nDone! Saved to %s\n", outputFilename)
 	}
+}
+
+func processClip(clip VideoClip, state *C.ConcatState, deleteClips, silent bool) error {
+	if !silent {
+		pterm.Info.Printf("Processing %s...\n", clip.Name)
+	}
+
+	cPath := C.CString(clip.Path)
+	ret := C.append_file(state, cPath)
+	C.free(unsafe.Pointer(cPath))
+
+	if ret < 0 {
+		pterm.Error.Printf("Failed to append %s\n", clip.Name)
+		return os.ErrInvalid
+	}
+
+	if deleteClips {
+		err := os.Remove(clip.Path)
+		if !silent {
+			if err != nil {
+				pterm.Warning.Printf("Processed %s, but failed to delete: %v\n", clip.Name, err)
+			} else {
+				pterm.Success.Printf("Processed and instantly freed %s!\n", clip.Name)
+			}
+		}
+	} else {
+		if !silent {
+			pterm.Success.Printf("Successfully processed %s\n", clip.Name)
+		}
+	}
+	return nil
 }
