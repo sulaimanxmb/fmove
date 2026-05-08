@@ -41,7 +41,11 @@ sudo apt install libavformat-dev libavcodec-dev libavutil-dev pkg-config
 ```
 
 ### Prerequisites (Windows)
-Due to Native CGO compilation requirements, native Windows building is extremely complex. Windows users are strongly recommended to run FMove inside **Windows Subsystem for Linux (WSL)** using the Linux instructions above.
+Good news! FMove now automatically cross-compiles Windows binaries. You **do not** need to install FFmpeg or a C-compiler on Windows.
+1. Go to the [Releases Page](https://github.com/sulaimanxmb/fmove/releases).
+2. Download `fmove-windows-amd64.zip`.
+3. Extract the folder. It contains `fmove.exe` and the required FFmpeg `.dll` files.
+4. Run `fmove.exe` in any directory containing your video files!
 
 ### Method 1: Go Install (Recommended)
 If you have Go installed, you can download, compile, and install the tool globally in a single command:

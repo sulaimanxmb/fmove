@@ -1,0 +1,58 @@
+name: Release FMove
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger automatically when you push a tag like v1.2.0
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows (Cross-Compile)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install MinGW Cross-Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 zip
+
+      - name: Download Windows FFmpeg Libraries
+        run: |
+          wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip -O ffmpeg-win.zip
+          unzip ffmpeg-win.zip
+          mv ffmpeg-master-latest-win64-gpl-shared ffmpeg-win
+          # Note: BtbN shared builds contain /include, /lib, and /bin (DLLs)
+
+      - name: Build fmove.exe
+        env:
+          CGO_ENABLED: 1
+          GOOS: windows
+          GOARCH: amd64
+          CC: x86_64-w64-mingw32-gcc
+          CGO_CFLAGS: -I${{ github.workspace }}/ffmpeg-win/include
+          CGO_LDFLAGS: -L${{ github.workspace }}/ffmpeg-win/lib -lavformat -lavcodec -lavutil
+        run: |
+          go build -ldflags="-s -w" -o fmove.exe .
+
+      - name: Package Windows ZIP
+        run: |
+          mkdir fmove-windows
+          cp fmove.exe fmove-windows/
+          cp ffmpeg-win/bin/*.dll fmove-windows/
+          zip -r fmove-windows-amd64.zip fmove-windows/
+
+      - name: Upload Windows Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: fmove-windows-amd64.zip
+          fail_on_unmatched_files: true
