@@ -18,9 +18,9 @@ run: build
 	@echo "==> Running FMove..."
 	./fmove
 
-demo: build
-	@echo "==> Running FMove in Demo Mode..."
-	./fmove --demo
+animation: build
+	@echo "==> Running FMove in Animation Mode..."
+	./fmove --animation
 
 clean:
 	@echo "==> Cleaning up..."

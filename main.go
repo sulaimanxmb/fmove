@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	demoMode := flag.Bool("demo", false, "Run UI animation demo without touching files")
+	demoMode := flag.Bool("animation", false, "Run UI animation demo without touching files")
 	flag.Parse()
 
 	bannerLines := []string{
@@ -20,23 +20,15 @@ func main() {
 		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
 		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
 		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
-		` |__|    |__| \_/ |__| \______/      \__/     |_______|`,
-	}
-
-	subLines := []string{
-		`     __         ___     __     _                 ____ __               __  _ `,
-		`    / /  __ __ / _/____/ /__ _(_)__ _  __ _     / __// /__  ___  __ _ / /_(_)`,
-		`   / _ \/ // / \ \/ __/ / _ '/ /  ' \/ _ '/    / _/ /  '_/ _ \/  ' \/ _ \/ / `,
-		`  /_.__/\_, / /__/\__/_/\_,_/_/_/_/_/\_,_/    /___//_/\_\\___/_/_/_/_.__/_/  `,
-		`       /___/                                                                 `,
+		` |__|    |__| \_/ |__| \______/      \__/     |_______|  A Native Space Recovery & Concatenator`,
 	}
 
 	colors := []pterm.Color{
-		pterm.FgLightMagenta, 
-		pterm.FgLightCyan, 
-		pterm.FgLightGreen, 
-		pterm.FgLightYellow, 
-		pterm.FgLightRed, 
+		pterm.FgLightMagenta,
+		pterm.FgLightCyan,
+		pterm.FgLightGreen,
+		pterm.FgLightYellow,
+		pterm.FgLightRed,
 		pterm.FgLightBlue,
 	}
 
@@ -44,12 +36,11 @@ func main() {
 	for i, line := range bannerLines {
 		pterm.NewStyle(colors[i%len(colors)], pterm.Bold).Println(line)
 	}
-	for i, line := range subLines {
-		// Use a slight offset so the gradient flows nicely
-		pterm.NewStyle(colors[(i+2)%len(colors)]).Println(line)
-	}
-	fmt.Println()
-	pterm.Info.Println("Native Space Recovery & Concatenator")
+
+	fmt.Println() // Leave a line space between title and name
+
+	// Normal Blue Text for Name
+	fmt.Println(pterm.Blue("                                by Sulaiman\n"))
 
 	var clips []VideoClip
 	var dir string
@@ -132,7 +123,7 @@ func main() {
 	if selectedOption == options[1] {
 		pterm.Warning.Println("WARNING: You have selected Space Recovery Mode.")
 		pterm.Warning.Println("Original clips will be permanently deleted from your drive immediately after their packets are processed!")
-		
+
 		confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Are you absolutely sure you want to delete the source files?").Show()
 		if !confirm {
 			pterm.Warning.Println("Operation cancelled by user.")
@@ -154,10 +145,10 @@ func main() {
 
 func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool) {
 	p, _ := pterm.DefaultProgressbar.WithTotal(int(totalDurationUS / 1000000)).WithTitle("Concatenating clips...").Start()
-	
+
 	for _, clip := range clips {
 		pterm.Info.Printf("Processing %s...\n", clip.Name)
-		
+
 		// Simulate processing time
 		clipSeconds := int(clip.DurationUS / 1000000)
 		for i := 0; i < clipSeconds; i++ {
