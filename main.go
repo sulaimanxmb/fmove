@@ -40,7 +40,7 @@ func main() {
 	fmt.Println() // Leave a line space between title and name
 
 	// Normal Blue Text for Name
-	fmt.Println(pterm.Blue("                                by Sulaiman\n"))
+	fmt.Println(pterm.Blue("                                by @sulaimanxmb on GitHub \n"))
 
 	var clips []VideoClip
 	var dir string

@@ -109,7 +109,9 @@ ConcatState* init_output(const char* first_input, const char* output_filename) {
             printf("DEBUG: avcodec_parameters_copy failed: %s\n", errbuf);
             return NULL;
         }
-        out_stream->codecpar->codec_tag = 0;
+        
+        // We explicitly keep the original codec_tag (e.g. 'hvc1' for iPhone HEVC).
+        // If we zero it out, FFmpeg defaults to 'hev1' which Apple devices refuse to play.
         state->stream_mapping[i] = out_stream->index;
     }
 
