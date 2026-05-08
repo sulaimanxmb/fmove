@@ -56,18 +56,27 @@ ConcatState* init_output(const char* first_input, const char* output_filename) {
     ConcatState *state = calloc(1, sizeof(ConcatState));
     
     AVFormatContext *ifmt_ctx = NULL;
-    if (avformat_open_input(&ifmt_ctx, first_input, NULL, NULL) < 0) {
+    int ret = avformat_open_input(&ifmt_ctx, first_input, NULL, NULL);
+    if (ret < 0) {
+        char errbuf[256];
+        av_strerror(ret, errbuf, sizeof(errbuf));
+        printf("DEBUG: avformat_open_input failed for %s: %s\n", first_input, errbuf);
         free(state);
         return NULL;
     }
-    if (avformat_find_stream_info(ifmt_ctx, NULL) < 0) {
+    ret = avformat_find_stream_info(ifmt_ctx, NULL);
+    if (ret < 0) {
+        char errbuf[256];
+        av_strerror(ret, errbuf, sizeof(errbuf));
+        printf("DEBUG: avformat_find_stream_info failed: %s\n", errbuf);
         avformat_close_input(&ifmt_ctx);
         free(state);
         return NULL;
     }
 
-    avformat_alloc_output_context2(&state->ofmt_ctx, NULL, NULL, output_filename);
+    ret = avformat_alloc_output_context2(&state->ofmt_ctx, NULL, NULL, output_filename);
     if (!state->ofmt_ctx) {
+        printf("DEBUG: avformat_alloc_output_context2 failed to deduce output format for %s\n", output_filename);
         avformat_close_input(&ifmt_ctx);
         free(state);
         return NULL;
@@ -77,22 +86,53 @@ ConcatState* init_output(const char* first_input, const char* output_filename) {
     if (state->stream_count > 10) state->stream_count = 10;
 
     for (int i = 0; i < state->stream_count; i++) {
+        state->stream_mapping[i] = -1; // Default to skipped
         AVStream *in_stream = ifmt_ctx->streams[i];
-        AVStream *out_stream = avformat_new_stream(state->ofmt_ctx, NULL);
-        if (!out_stream) return NULL;
+        
+        // Skip streams that are not video or audio, or have unknown codecs (like iPhone 'apac' Spatial Audio)
+        if ((in_stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO && 
+             in_stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) ||
+             in_stream->codecpar->codec_id == AV_CODEC_ID_NONE) {
+            continue;
+        }
 
-        avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar);
+        AVStream *out_stream = avformat_new_stream(state->ofmt_ctx, NULL);
+        if (!out_stream) {
+            printf("DEBUG: avformat_new_stream failed\n");
+            return NULL;
+        }
+
+        ret = avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar);
+        if (ret < 0) {
+            char errbuf[256];
+            av_strerror(ret, errbuf, sizeof(errbuf));
+            printf("DEBUG: avcodec_parameters_copy failed: %s\n", errbuf);
+            return NULL;
+        }
         out_stream->codecpar->codec_tag = 0;
-        state->stream_mapping[i] = i;
+        state->stream_mapping[i] = out_stream->index;
     }
 
     if (!(state->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
-        if (avio_open(&state->ofmt_ctx->pb, output_filename, AVIO_FLAG_WRITE) < 0) {
+        ret = avio_open(&state->ofmt_ctx->pb, output_filename, AVIO_FLAG_WRITE);
+        if (ret < 0) {
+            char errbuf[256];
+            av_strerror(ret, errbuf, sizeof(errbuf));
+            printf("DEBUG: avio_open failed for %s: %s\n", output_filename, errbuf);
             return NULL;
         }
     }
 
-    if (avformat_write_header(state->ofmt_ctx, NULL) < 0) {
+    AVDictionary *opt = NULL;
+    av_dict_set(&opt, "strict", "unofficial", 0);
+    
+    ret = avformat_write_header(state->ofmt_ctx, &opt);
+    av_dict_free(&opt);
+    
+    if (ret < 0) {
+        char errbuf[256];
+        av_strerror(ret, errbuf, sizeof(errbuf));
+        printf("DEBUG: avformat_write_header failed: %s\n", errbuf);
         return NULL;
     }
 
@@ -124,8 +164,14 @@ int append_file(ConcatState *state, const char* filepath) {
             av_packet_unref(pkt);
             continue;
         }
-        AVStream *in_stream  = ifmt_ctx->streams[pkt->stream_index];
+        
         int stream_index = state->stream_mapping[pkt->stream_index];
+        if (stream_index < 0) {
+            av_packet_unref(pkt);
+            continue;
+        }
+
+        AVStream *in_stream  = ifmt_ctx->streams[pkt->stream_index];
         AVStream *out_stream = state->ofmt_ctx->streams[stream_index];
 
         pkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
