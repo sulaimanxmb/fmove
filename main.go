@@ -14,23 +14,41 @@ func main() {
 	demoMode := flag.Bool("demo", false, "Run UI animation demo without touching files")
 	flag.Parse()
 
-	banner := `
-    ________  ___                  
-   / ____/  |/  /___ _   _____     
-  / /_  / /|_/ / __ \ | / / _ \    
- / __/ / /  / / /_/ / |/ /  __/    
-/_/   /_/  /_/\____/|___/\___/     
-`
-	subBanner := `
-    __          _____       __        _                          ________                    __  _ 
-   / /_  __  __/ ___/__  __/ /___ _(_)___ ___  ____ _____       / ____/ /_______  ____ _____/ /_(_)
-  / __ \/ / / /\__ \/ / / / / __ `/ / __ `__ \/ __ `/ __ \     / __/ / //_/ ___/ / __ `/ __ `/ __ \/ / 
- / /_/ / /_/ /___/ / /_/ / / /_/ / / / / / / / /_/ / / / /    / /___/ ,< (__  ) / /_/ / /_/ / /_/ / /  
-/_.___/\__, //____/\__,_/_/\__,_/_/_/ /_/ /_/\__,_/_/ /_/    /_____/_/|_/____/  \__,_/\__,_/_.___/_/   
-      /____/                                                                                           
-`
-	fmt.Println(pterm.Cyan(banner))
-	fmt.Println(pterm.LightBlue(subBanner))
+	bannerLines := []string{
+		`  ______  __       __   ______   ____    ____  ______`,
+		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|`,
+		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
+		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
+		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
+		` |__|    |__| \_/ |__| \______/      \__/     |_______|`,
+	}
+
+	subLines := []string{
+		`     __         ___     __     _                 ____ __               __  _ `,
+		`    / /  __ __ / _/____/ /__ _(_)__ _  __ _     / __// /__  ___  __ _ / /_(_)`,
+		`   / _ \/ // / \ \/ __/ / _ '/ /  ' \/ _ '/    / _/ /  '_/ _ \/  ' \/ _ \/ / `,
+		`  /_.__/\_, / /__/\__/_/\_,_/_/_/_/_/\_,_/    /___//_/\_\\___/_/_/_/_.__/_/  `,
+		`       /___/                                                                 `,
+	}
+
+	colors := []pterm.Color{
+		pterm.FgLightMagenta, 
+		pterm.FgLightCyan, 
+		pterm.FgLightGreen, 
+		pterm.FgLightYellow, 
+		pterm.FgLightRed, 
+		pterm.FgLightBlue,
+	}
+
+	fmt.Println()
+	for i, line := range bannerLines {
+		pterm.NewStyle(colors[i%len(colors)], pterm.Bold).Println(line)
+	}
+	for i, line := range subLines {
+		// Use a slight offset so the gradient flows nicely
+		pterm.NewStyle(colors[(i+2)%len(colors)]).Println(line)
+	}
+	fmt.Println()
 	pterm.Info.Println("Native Space Recovery & Concatenator")
 
 	var clips []VideoClip
