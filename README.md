@@ -1,5 +1,15 @@
 # FMove
 
+# FMove
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/sulaimanxmb/fmove)](https://goreportcard.com/report/github.com/sulaimanxmb/fmove)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/sulaimanxmb/fmove)](https://github.com/sulaimanxmb/fmove)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)](#)
+
+> A blazing-fast, native Go CLI for lossless video concatenation and SSD space recovery.
+
+
 ```text
   ______  __       __   ______   ____    ____  ______
  |   ___||  \     /  | /  __  \  \   \  /   / |   ___|
