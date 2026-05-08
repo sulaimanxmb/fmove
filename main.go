@@ -24,7 +24,7 @@ func main() {
 
       Native Space Recovery & Concatenator
 `
-	pterm.Cyan(banner)
+	pterm.Cyan.Println(banner)
 
 	var clips []VideoClip
 	var dir string
