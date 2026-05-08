@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,26 +11,43 @@ import (
 )
 
 func main() {
+	demoMode := flag.Bool("demo", false, "Run UI animation demo without touching files")
+	flag.Parse()
+
 	pterm.DefaultHeader.WithFullWidth().WithMargin(2).Println("FMove - Native GoPro Concatenator")
 
-	dir, err := os.Getwd()
-	if err != nil {
-		pterm.Fatal.Printf("Failed to get current directory: %v\n", err)
-	}
+	var clips []VideoClip
+	var dir string
+	var err error
 
-	spinner, _ := pterm.DefaultSpinner.Start("Scanning directory for MP4 files natively...")
-	clips, err := ScanDirectory(dir)
-	if err != nil {
-		spinner.Fail("Failed to scan directory")
-		pterm.Fatal.Println(err)
-	}
+	if *demoMode {
+		pterm.Info.Println("Running in UI DEMO MODE. No real files will be read or modified.")
+		clips = []VideoClip{
+			{Name: "GH010123.MP4", CreationTime: time.Now().Add(-2 * time.Hour), DurationUS: 420000000, Size: 4200 * 1024 * 1024},
+			{Name: "GH010124.MP4", CreationTime: time.Now().Add(-1 * time.Hour), DurationUS: 360000000, Size: 3600 * 1024 * 1024},
+			{Name: "GH010125.MP4", CreationTime: time.Now().Add(-10 * time.Minute), DurationUS: 150000000, Size: 1500 * 1024 * 1024},
+		}
+		dir = "/Demo/Workspace"
+	} else {
+		dir, err = os.Getwd()
+		if err != nil {
+			pterm.Fatal.Printf("Failed to get current directory: %v\n", err)
+		}
 
-	if len(clips) == 0 {
-		spinner.Warning("No MP4/MOV files found in the current directory.")
-		return
-	}
+		spinner, _ := pterm.DefaultSpinner.Start("Scanning directory for MP4 files natively...")
+		clips, err = ScanDirectory(dir)
+		if err != nil {
+			spinner.Fail("Failed to scan directory")
+			pterm.Fatal.Println(err)
+		}
 
-	spinner.Success(fmt.Sprintf("Found %d clips", len(clips)))
+		if len(clips) == 0 {
+			spinner.Warning("No MP4/MOV files found in the current directory.")
+			return
+		}
+
+		spinner.Success(fmt.Sprintf("Found %d clips", len(clips)))
+	}
 
 	// Build Table Data
 	tableData := pterm.TableData{
@@ -90,6 +108,35 @@ func main() {
 
 	outputFile := filepath.Join(dir, "fmove_output.mp4")
 
+	if *demoMode {
+		runDemoAnimation(clips, totalDurationUS, deleteClips)
+		return
+	}
+
 	// Start processing
 	ProcessFiles(clips, outputFile, totalDurationUS, deleteClips)
+}
+
+func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool) {
+	p, _ := pterm.DefaultProgressbar.WithTotal(int(totalDurationUS / 1000000)).WithTitle("Concatenating clips...").Start()
+	
+	for _, clip := range clips {
+		pterm.Info.Printf("Processing %s...\n", clip.Name)
+		
+		// Simulate processing time
+		clipSeconds := int(clip.DurationUS / 1000000)
+		for i := 0; i < clipSeconds; i++ {
+			p.Add(1)
+			time.Sleep(10 * time.Millisecond) // Fast animation
+		}
+
+		if deleteClips {
+			pterm.Success.Printf("Processed and instantly freed %s!\n", clip.Name)
+		} else {
+			pterm.Success.Printf("Successfully processed %s\n", clip.Name)
+		}
+	}
+
+	p.Stop()
+	pterm.Success.Printf("\nDone! Saved to /Demo/Workspace/fmove_output.mp4\n")
 }
