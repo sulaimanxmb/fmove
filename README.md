@@ -79,4 +79,8 @@ Simply navigate to any directory containing `.MP4` or `.MOV` files and run:
 ```bash
 fmove
 ```
-You will be prompted with an interactive menu to either perform a **Normal Concatenation** (keeping your files) or engage **Space Recovery Mode** (dynamically freeing space).
+
+FMove has several advanced options for automation, output naming, and filtering. To see all available flags, run:
+```bash
+fmove --help
+```

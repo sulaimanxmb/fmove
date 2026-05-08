@@ -27,7 +27,7 @@ func init() {
 	C.init_ffmpeg()
 }
 
-func ScanDirectory(dir string) ([]VideoClip, error) {
+func ScanDirectory(dir string, extFilter string, outputFile string) ([]VideoClip, error) {
 	var clips []VideoClip
 
 	entries, err := os.ReadDir(dir)
@@ -40,11 +40,11 @@ func ScanDirectory(dir string) ([]VideoClip, error) {
 			continue
 		}
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext == ".mp4" || ext == ".mov" {
+		if (ext == ".mp4" || ext == ".mov") && (extFilter == "" || ext == extFilter) {
 			absPath, _ := filepath.Abs(filepath.Join(dir, entry.Name()))
 
 			// Ignore our own potential output file
-			if entry.Name() == "fmove_output.mp4" {
+			if entry.Name() == outputFile {
 				continue
 			}
 

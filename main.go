@@ -12,6 +12,18 @@ import (
 
 func main() {
 	demoMode := flag.Bool("animation", false, "Run UI animation demo without touching files")
+	outFlag := flag.String("o", "fmove_output.mp4", "Output filename")
+	dirFlag := flag.String("d", "", "Target directory (default: current directory)")
+	forceFlag := flag.Bool("f", false, "Force space recovery mode without interactive prompt")
+	extFlag := flag.String("ext", "", "Filter by specific extension (e.g., .mov)")
+	silentFlag := flag.Bool("s", false, "Silent mode: hide UI and banners")
+
+	flag.Usage = func() {
+		fmt.Printf("FMove - Native Space Recovery & Concatenator\n\n")
+		fmt.Printf("Usage: fmove [options]\n\nOptions:\n")
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	bannerLines := []string{
@@ -32,15 +44,17 @@ func main() {
 		pterm.FgLightBlue,
 	}
 
-	fmt.Println()
-	for i, line := range bannerLines {
-		pterm.NewStyle(colors[i%len(colors)], pterm.Bold).Println(line)
+	if !*silentFlag {
+		fmt.Println()
+		for i, line := range bannerLines {
+			pterm.NewStyle(colors[i%len(colors)], pterm.Bold).Println(line)
+		}
+
+		fmt.Println() // Leave a line space between title and name
+
+		// Normal Blue Text for Name
+		fmt.Println(pterm.Blue("                                                                                       by Sulaiman\n"))
 	}
-
-	fmt.Println() // Leave a line space between title and name
-
-	// Normal Blue Text for Name
-	fmt.Println(pterm.Blue("                                by @sulaimanxmb on GitHub \n"))
 
 	var clips []VideoClip
 	var dir string
@@ -55,24 +69,31 @@ func main() {
 		}
 		dir = "/Demo/Workspace"
 	} else {
-		dir, err = os.Getwd()
-		if err != nil {
-			pterm.Fatal.Printf("Failed to get current directory: %v\n", err)
+		if *dirFlag != "" {
+			dir = *dirFlag
+		} else {
+			dir, err = os.Getwd()
+			if err != nil {
+				pterm.Fatal.Printf("Failed to get current directory: %v\n", err)
+			}
 		}
 
-		spinner, _ := pterm.DefaultSpinner.Start("Scanning directory for MP4 files natively...")
-		clips, err = ScanDirectory(dir)
+		var spinner *pterm.SpinnerPrinter
+		if !*silentFlag {
+			spinner, _ = pterm.DefaultSpinner.Start("Scanning directory natively...")
+		}
+		clips, err = ScanDirectory(dir, *extFlag, *outFlag)
 		if err != nil {
-			spinner.Fail("Failed to scan directory")
+			if spinner != nil { spinner.Fail("Failed to scan directory") }
 			pterm.Fatal.Println(err)
 		}
 
 		if len(clips) == 0 {
-			spinner.Warning("No MP4/MOV files found in the current directory.")
+			if spinner != nil { spinner.Warning("No matching video files found in the current directory.") }
 			return
 		}
 
-		spinner.Success(fmt.Sprintf("Found %d clips", len(clips)))
+		if spinner != nil { spinner.Success(fmt.Sprintf("Found %d clips", len(clips))) }
 	}
 
 	// Build Table Data
@@ -99,40 +120,50 @@ func main() {
 		totalSize += clip.Size
 	}
 
-	pterm.DefaultTable.WithHasHeader().WithData(tableData).Render()
-	pterm.Println()
+	if !*silentFlag {
+		pterm.DefaultTable.WithHasHeader().WithData(tableData).Render()
+		pterm.Println()
 
-	expectedSize := fmt.Sprintf("%.2f GB", float64(totalSize)/(1024*1024*1024))
-	pterm.Info.Printf("Total Expected Duration: %s | Total Expected Size: %s\n\n", time.Duration(totalDurationUS*1000).String(), expectedSize)
-
-	// User confirmation via interactive select
-	options := []string{
-		"1. Normal Concatenation (Keep original clips)",
-		"2. Space Recovery Mode (Dynamically delete original clips)",
-		"Cancel",
-	}
-
-	selectedOption, _ := pterm.DefaultInteractiveSelect.WithOptions(options).WithDefaultText("Select operation mode").Show()
-
-	if selectedOption == "Cancel" || selectedOption == "" {
-		pterm.Warning.Println("Operation cancelled by user.")
-		return
+		expectedSize := fmt.Sprintf("%.2f GB", float64(totalSize)/(1024*1024*1024))
+		pterm.Info.Printf("Total Expected Duration: %s | Total Expected Size: %s\n\n", time.Duration(totalDurationUS*1000).String(), expectedSize)
 	}
 
 	deleteClips := false
-	if selectedOption == options[1] {
-		pterm.Warning.Println("WARNING: You have selected Space Recovery Mode.")
-		pterm.Warning.Println("Original clips will be permanently deleted from your drive immediately after their packets are processed!")
 
-		confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Are you absolutely sure you want to delete the source files?").Show()
-		if !confirm {
+	if *forceFlag {
+		deleteClips = true
+		if !*silentFlag {
+			pterm.Warning.Println("Force flag provided. Automatically entering Space Recovery Mode.")
+		}
+	} else {
+		// User confirmation via interactive select
+		options := []string{
+			"1. Normal Concatenation (Keep original clips)",
+			"2. Space Recovery Mode (Dynamically delete original clips)",
+			"Cancel",
+		}
+
+		selectedOption, _ := pterm.DefaultInteractiveSelect.WithOptions(options).WithDefaultText("Select operation mode").Show()
+
+		if selectedOption == "Cancel" || selectedOption == "" {
 			pterm.Warning.Println("Operation cancelled by user.")
 			return
 		}
-		deleteClips = true
+
+		if selectedOption == options[1] {
+			pterm.Warning.Println("WARNING: You have selected Space Recovery Mode.")
+			pterm.Warning.Println("Original clips will be permanently deleted from your drive immediately after their packets are processed!")
+
+			confirm, _ := pterm.DefaultInteractiveConfirm.WithDefaultText("Are you absolutely sure you want to delete the source files?").Show()
+			if !confirm {
+				pterm.Warning.Println("Operation cancelled by user.")
+				return
+			}
+			deleteClips = true
+		}
 	}
 
-	outputFile := filepath.Join(dir, "fmove_output.mp4")
+	outputFile := filepath.Join(dir, *outFlag)
 
 	if *demoMode {
 		runDemoAnimation(clips, totalDurationUS, deleteClips)
@@ -140,7 +171,7 @@ func main() {
 	}
 
 	// Start processing
-	ProcessFiles(clips, outputFile, totalDurationUS, deleteClips)
+	ProcessFiles(clips, outputFile, totalDurationUS, deleteClips, *silentFlag)
 }
 
 func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool) {

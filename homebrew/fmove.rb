@@ -2,7 +2,7 @@ class Fmove < Formula
   desc "Native Go + FFmpeg Concatenation & Space Recovery tool"
   homepage "https://github.com/sulaimanxmb/fmove"
   url "https://github.com/sulaimanxmb/fmove.git",
-      tag:      "v1.0.0",
+      tag:      "v1.1.0",
       revision: "UPDATE_WITH_COMMIT_HASH"
   license "MIT"
 
