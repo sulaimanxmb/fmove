@@ -44,13 +44,13 @@ Due to Native CGO compilation requirements, native Windows building is extremely
 ### Method 1: Go Install (Recommended)
 If you have Go installed, you can download, compile, and install the tool globally in a single command:
 ```bash
-go install github.com/sulaimaneksambi/fmove@latest
+go install github.com/sulaimanxmb/fmove@latest
 ```
 
 ### Method 2: Homebrew Tap
 If you prefer Homebrew for managing binaries:
 ```bash
-brew tap sulaimaneksambi/fmove
+brew tap sulaimanxmb/fmove
 brew install fmove
 ```
 *(Note to dev: Make sure you create a `homebrew-fmove` repository on GitHub and place your `fmove.rb` formula in it for this to work!)*
@@ -63,7 +63,7 @@ If you are cloning this repository to build it yourself, you don't have to worry
 
 ```bash
 # Clone the repo
-git clone https://github.com/sulaimaneksambi/fmove.git
+git clone https://github.com/sulaimanxmb/fmove.git
 cd fmove
 
 # Build the binary automatically
