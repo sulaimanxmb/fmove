@@ -14,7 +14,17 @@ func main() {
 	demoMode := flag.Bool("demo", false, "Run UI animation demo without touching files")
 	flag.Parse()
 
-	pterm.DefaultHeader.WithFullWidth().WithMargin(2).Println("FMove - Native GoPro Concatenator")
+	banner := `
+  _____ __  __                
+ |  ___|  \/  |               
+ | |_  | \  / | _____   _____ 
+ |  _| | |\/| |/ _ \ \ / / _ \
+ | |   | |  | | (_) \ V /  __/
+ \_|   |_|  |_|\___/ \_/ \___|
+
+      Native Space Recovery & Concatenator
+`
+	pterm.Cyan(banner)
 
 	var clips []VideoClip
 	var dir string
