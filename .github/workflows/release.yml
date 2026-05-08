@@ -39,6 +39,7 @@ jobs:
           GOOS: windows
           GOARCH: amd64
           CC: x86_64-w64-mingw32-gcc
+          PKG_CONFIG_PATH: ${{ github.workspace }}/ffmpeg-win/lib/pkgconfig
           CGO_CFLAGS: -I${{ github.workspace }}/ffmpeg-win/include
           CGO_LDFLAGS: -L${{ github.workspace }}/ffmpeg-win/lib -lavformat -lavcodec -lavutil
         run: |
