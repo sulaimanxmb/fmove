@@ -12,6 +12,8 @@ import (
 	"github.com/pterm/pterm"
 )
 
+var AppVersion = "v2.1.1"
+
 func main() {
 	demoMode := flag.Bool("animation", false, "Run UI animation demo without touching files")
 	outFlag := flag.String("o", "fmove_output.mp4", "Output filename")
@@ -23,7 +25,7 @@ func main() {
 	flag.BoolVar(versionFlag, "version", false, "Print version information")
 
 	flag.Usage = func() {
-		fmt.Printf("FMove - Native Space Recovery & Concatenator v2.0.0\n\n")
+		fmt.Printf("FMove - Native Space Recovery & Concatenator %s\n\n", AppVersion)
 		fmt.Printf("Usage: fmove [options]\n\n")
 		fmt.Printf("Examples:\n")
 		fmt.Printf("  fmove -c .                        (Combine all videos in current directory)\n")
@@ -40,7 +42,7 @@ func main() {
 	}
 
 	if *versionFlag {
-		fmt.Println("FMove Native Concatenator v2.0.0")
+		fmt.Printf("FMove Native Concatenator %s\n", AppVersion)
 		os.Exit(0)
 	}
 
