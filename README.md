@@ -60,7 +60,7 @@ FMove automatically cross-compiles Windows binaries. You **do not** need to inst
 ### Method 1: Go Install (Recommended)
 If you have Go installed, you can download, compile, and install the tool globally in a single command:
 ```bash
-go install github.com/sulaimanxmb/fmove/v2@latest
+go install github.com/sulaimanxmb/fmove@latest
 ```
 
 ### Method 2: Homebrew Tap
