@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pterm/pterm"
@@ -14,18 +15,34 @@ import (
 func main() {
 	demoMode := flag.Bool("animation", false, "Run UI animation demo without touching files")
 	outFlag := flag.String("o", "fmove_output.mp4", "Output filename")
-	dirFlag := flag.String("d", "", "Target directory (default: current directory)")
+	combineFlag := flag.String("c", "", "Combine specific files (comma separated) or all files in a directory (e.g., -c clip1.mp4,clip2.mp4 or -c .)")
 	forceFlag := flag.Bool("f", false, "Force space recovery mode without interactive prompt")
 	extFlag := flag.String("ext", "", "Filter by specific extension (e.g., .mov)")
 	silentFlag := flag.Bool("s", false, "Silent mode: hide UI and banners")
+	versionFlag := flag.Bool("v", false, "Print version information")
+	flag.BoolVar(versionFlag, "version", false, "Print version information")
 
 	flag.Usage = func() {
-		fmt.Printf("FMove - Native Space Recovery & Concatenator\n\n")
-		fmt.Printf("Usage: fmove [options]\n\nOptions:\n")
+		fmt.Printf("FMove - Native Space Recovery & Concatenator v2.0.0\n\n")
+		fmt.Printf("Usage: fmove [options]\n\n")
+		fmt.Printf("Examples:\n")
+		fmt.Printf("  fmove -c .                        (Combine all videos in current directory)\n")
+		fmt.Printf("  fmove -c clip1.mp4,clip2.mp4      (Combine specific files)\n")
+		fmt.Printf("  fmove -c /path/to/vids -o out.mp4 (Combine directory into specific output)\n\nOptions:\n")
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
+
+	if len(os.Args) == 1 {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	if *versionFlag {
+		fmt.Println("FMove Native Concatenator v2.0.0")
+		os.Exit(0)
+	}
 
 	if !*silentFlag {
 		printBanner()
@@ -44,30 +61,58 @@ func main() {
 		}
 		dir = "/Demo/Workspace"
 	} else {
-		if *dirFlag != "" {
-			dir = *dirFlag
-		} else {
-			dir, err = os.Getwd()
-			if err != nil {
-				pterm.Fatal.Printf("Failed to get current directory: %v\n", err)
-			}
+		if *combineFlag == "" {
+			pterm.Error.Println("Please provide input files or a directory using the -c flag. Run 'fmove --help' for details.")
+			os.Exit(1)
 		}
 
 		var spinner *pterm.SpinnerPrinter
 		if !*silentFlag {
-			spinner, _ = pterm.DefaultSpinner.Start("Scanning directory natively...")
+			spinner, _ = pterm.DefaultSpinner.Start("Scanning files natively...")
 		}
-		clips, err = ScanDirectory(dir, *extFlag, *outFlag)
+
+		if strings.Contains(*combineFlag, ",") {
+			// Comma separated files
+			files := strings.Split(*combineFlag, ",")
+			for i := range files {
+				files[i] = strings.TrimSpace(files[i])
+				files[i], _ = filepath.Abs(files[i])
+			}
+			clips, err = ScanFiles(files)
+			if len(files) > 0 {
+				dir = filepath.Dir(files[0])
+			}
+		} else {
+			// Directory or Single file
+			info, errStat := os.Stat(*combineFlag)
+			if errStat != nil {
+				if spinner != nil {
+					spinner.Fail("Failed to read input path")
+				}
+				pterm.Error.Println(errStat)
+				os.Exit(1)
+			}
+			if info.IsDir() {
+				dir, _ = filepath.Abs(*combineFlag)
+				clips, err = ScanDirectory(dir, *extFlag, *outFlag)
+			} else {
+				absPath, _ := filepath.Abs(*combineFlag)
+				dir = filepath.Dir(absPath)
+				clips, err = ScanFiles([]string{absPath})
+			}
+		}
+
 		if err != nil {
 			if spinner != nil {
-				spinner.Fail("Failed to scan directory")
+				spinner.Fail("Failed to scan files")
 			}
-			pterm.Fatal.Println(err)
+			pterm.Error.Println(err)
+			os.Exit(1)
 		}
 
 		if len(clips) == 0 {
 			if spinner != nil {
-				spinner.Warning("No matching video files found in the current directory.")
+				spinner.Warning("No matching video files found.")
 			}
 			return
 		}

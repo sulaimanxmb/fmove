@@ -110,6 +110,69 @@ func ScanDirectory(dir string, extFilter string, outputFile string) ([]VideoClip
 	return clips, nil
 }
 
+func ScanFiles(filePaths []string) ([]VideoClip, error) {
+	clips := make([]VideoClip, len(filePaths))
+	var wg sync.WaitGroup
+
+	for i, path := range filePaths {
+		wg.Add(1)
+		go func(index int, absPath string) {
+			defer wg.Done()
+
+			cPath := C.CString(absPath)
+			meta := C.get_metadata(cPath)
+			C.free(unsafe.Pointer(cPath))
+
+			if meta != nil {
+				info, err := os.Stat(absPath)
+				if err != nil {
+					C.free(unsafe.Pointer(meta))
+					return
+				}
+
+				var creationTime time.Time
+				if meta.creation_time != nil {
+					timeStr := C.GoString(meta.creation_time)
+					C.free(unsafe.Pointer(meta.creation_time))
+					parsed, err := time.Parse(time.RFC3339Nano, timeStr)
+					if err == nil {
+						creationTime = parsed
+					} else {
+						creationTime = info.ModTime()
+					}
+				} else {
+					creationTime = info.ModTime()
+				}
+
+				clips[index] = VideoClip{
+					Path:         absPath,
+					CreationTime: creationTime,
+					DurationUS:   int64(meta.duration),
+					Size:         info.Size(),
+					Name:         filepath.Base(absPath),
+					Width:        int(meta.width),
+					Height:       int(meta.height),
+					FPS:          float64(meta.fps),
+				}
+
+				C.free(unsafe.Pointer(meta))
+			}
+		}(i, path)
+	}
+
+	wg.Wait()
+
+	// Filter out any empty items (failed to scan)
+	var validClips []VideoClip
+	for _, clip := range clips {
+		if clip.Path != "" {
+			validClips = append(validClips, clip)
+		}
+	}
+
+	return validClips, nil
+}
+
 // Global variable for progress callback
 var currentProgressCallback func(int64)
 
