@@ -208,6 +208,7 @@ func printBanner() {
 		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
 		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
 		` |__|    |__| \_/ |__| \______/      \__/     |_______|  A Native Space Recovery & Concatenator`,
+		fmt.Sprintf(" %s", AppVersion),
 	}
 
 	colors := []pterm.Color{
