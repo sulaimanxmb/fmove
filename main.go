@@ -202,13 +202,12 @@ func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool
 
 func printBanner() {
 	bannerLines := []string{
-		`  ______  __       __   ______   ____    ____  ______`,
+		`  ______  __       __   ______   ____    ____  ______            ` + AppVersion,
 		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|`,
 		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
 		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
 		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
 		` |__|    |__| \_/ |__| \______/      \__/     |_______|  A Native Space Recovery & Concatenator`,
-		fmt.Sprintf(" %s", AppVersion),
 	}
 
 	colors := []pterm.Color{
