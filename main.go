@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -13,6 +14,14 @@ import (
 )
 
 var AppVersion = "dev"
+
+func init() {
+	if AppVersion == "dev" {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+			AppVersion = info.Main.Version
+		}
+	}
+}
 
 func main() {
 	demoMode := flag.Bool("animation", false, "Run UI animation demo without touching files")
