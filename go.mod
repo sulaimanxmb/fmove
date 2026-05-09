@@ -1,4 +1,5 @@
-module github.com/sulaimanxmb/fmove
+module github.com/sulaimanxmb/fmove/v2
+
 
 go 1.26.1
 

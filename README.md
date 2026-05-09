@@ -60,7 +60,7 @@ FMove automatically cross-compiles Windows binaries. You **do not** need to inst
 ### Method 1: Go Install (Recommended)
 If you have Go installed, you can download, compile, and install the tool globally in a single command:
 ```bash
-go install github.com/sulaimanxmb/fmove@latest
+go install github.com/sulaimanxmb/fmove/v2@latest
 ```
 
 ### Method 2: Homebrew Tap
@@ -91,7 +91,12 @@ make run
 ## 🎮 Usage
 Simply navigate to any directory containing `.MP4` or `.MOV` files and run:
 ```bash
-fmove
+fmove -c .
+```
+
+To combine specific files explicitly, separate them with a comma:
+```bash
+fmove -c "clip1.mp4, clip2.mp4"
 ```
 
 FMove has several advanced options for automation, output naming, and filtering. To see all available flags, run:
