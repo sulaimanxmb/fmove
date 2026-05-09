@@ -11,7 +11,7 @@ all: build
 
 build:
 	@echo "==> Building FMove Native Engine..."
-	go build -o fmove .
+	go build -ldflags="-X main.AppVersion=$$(git describe --tags --abbrev=0 2>/dev/null || echo dev)" -o fmove .
 	@echo "==> Build successful! Run ./fmove to start."
 
 run: build

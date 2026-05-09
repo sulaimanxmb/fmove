@@ -12,7 +12,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-var AppVersion = "v2.1.1"
+var AppVersion = "dev"
 
 func main() {
 	demoMode := flag.Bool("animation", false, "Run UI animation demo without touching files")
@@ -203,7 +203,7 @@ func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool
 func printBanner() {
 	bannerLines := []string{
 		`  ______  __       __   ______   ____    ____  ______`,
-		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|` + AppVersion,
+		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|  ` + AppVersion,
 		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
 		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
 		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,

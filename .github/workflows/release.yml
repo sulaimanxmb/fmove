@@ -43,7 +43,7 @@ jobs:
           CGO_CFLAGS: -I${{ github.workspace }}/ffmpeg-win/include
           CGO_LDFLAGS: -L${{ github.workspace }}/ffmpeg-win/lib -lavformat -lavcodec -lavutil
         run: |
-          go build -ldflags="-s -w" -o fmove.exe .
+          go build -ldflags="-s -w -X main.AppVersion=${{ github.ref_name }}" -o fmove.exe .
 
       - name: Package Windows ZIP
         run: |
