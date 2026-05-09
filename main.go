@@ -202,8 +202,8 @@ func runDemoAnimation(clips []VideoClip, totalDurationUS int64, deleteClips bool
 
 func printBanner() {
 	bannerLines := []string{
-		`  ______  __       __   ______   ____    ____  ______            ` + AppVersion,
-		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|`,
+		`  ______  __       __   ______   ____    ____  ______`,
+		` |   ___||  \     /  | /  __  \  \   \  /   / |   ___|                                        ` + AppVersion,
 		` |  |__  |   \   /   ||  |  |  |  \   \/   /  |  |__`,
 		` |   __| |    \_/    ||  |  |  |   \      /   |   __|`,
 		` |  |    |  |\   /|  ||  '--'  |    \    /    |  |____`,
